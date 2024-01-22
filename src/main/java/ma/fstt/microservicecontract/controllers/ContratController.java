@@ -7,6 +7,7 @@ import ma.fstt.microservicecontract.payload.request.UpdateContractRequest;
 import ma.fstt.microservicecontract.payload.response.MessageResponse;
 import ma.fstt.microservicecontract.repository.ContractRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -20,9 +21,27 @@ public class ContratController {
     @Autowired
     public ContractRepository contractRepository;
 
+    private final AuthService authService;
+
+    public ContratController(ContractRepository contractRepository, AuthService authService) {
+        this.contractRepository = contractRepository;
+        this.authService = authService;
+    }
+
+    private String extractTokenFromHeader(String authorizationHeader) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring(7);
+        }
+        return null;
+    }
     @PostMapping("/add")
-    public ResponseEntity<MessageResponse> addContract(@RequestBody AddContractRequest addContractRequest) {
+    public ResponseEntity<MessageResponse> addContract(@RequestBody AddContractRequest addContractRequest,@RequestHeader("Authorization") String authorizationHeader) {
         try {
+            // Extract the token from the Authorization header
+            String token = extractTokenFromHeader(authorizationHeader);
+            if (!authService.isValidEmployeeToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(401, "Not authorized"));
+            }
             Contract contract = new Contract(
                     addContractRequest.getName(),
                     addContractRequest.getPrice(),
@@ -39,6 +58,7 @@ public class ContratController {
     @GetMapping("/getAll")
     public ResponseEntity<List<Contract>> getAllContract() {
         try {
+
             List<Contract> contracts = contractRepository.findAll();
 
             return ResponseEntity.ok(contracts);
@@ -50,6 +70,7 @@ public class ContratController {
     @GetMapping("/{contractId}")
     public ResponseEntity<Contract> getContractById(@PathVariable String contractId) {
         try {
+
             Optional<Contract> contract = contractRepository.findById(contractId);
             if (contract.isPresent()) {
                 return ResponseEntity.ok(contract.get());
@@ -63,8 +84,13 @@ public class ContratController {
 
 
     @DeleteMapping("/{contractId}")
-    public ResponseEntity<MessageResponse> deleteContract(@PathVariable String contractId) {
+    public ResponseEntity<MessageResponse> deleteContract(@PathVariable String contractId,@RequestHeader("Authorization") String authorizationHeader) {
         try {
+            // Extract the token from the Authorization header
+            String token = extractTokenFromHeader(authorizationHeader);
+            if (!authService.isValidEmployeeToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(401, "Not authorized"));
+            }
             Optional<Contract> contract = contractRepository.findById(contractId);
             if (contract.isPresent()) {
                 if(contract.get().isActive()){
@@ -83,8 +109,14 @@ public class ContratController {
     //active/inactive contract
     @PutMapping("/state/{contractId}")
     public ResponseEntity<MessageResponse> contractUpdateState(
-            @PathVariable String contractId) {
+            @PathVariable String contractId,
+            @RequestHeader("Authorization") String authorizationHeader) {
         try {
+            // Extract the token from the Authorization header
+            String token = extractTokenFromHeader(authorizationHeader);
+            if (!authService.isValidEmployeeToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(401, "Not authorized"));
+            }
             Optional<Contract> optionalContract = contractRepository.findById(contractId);
             if (optionalContract.isPresent()) {
                 Contract contract = optionalContract.get();
@@ -104,9 +136,15 @@ public class ContratController {
     @PutMapping("/{contractId}")
     public ResponseEntity<MessageResponse> contractUpdate(
             @PathVariable String contractId,
-            @RequestBody UpdateContractRequest updatedClientRequest
+            @RequestBody UpdateContractRequest updatedClientRequest,
+            @RequestHeader("Authorization") String authorizationHeader
     ) {
         try {
+            // Extract the token from the Authorization header
+            String token = extractTokenFromHeader(authorizationHeader);
+            if (!authService.isValidEmployeeToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(401, "Not authorized"));
+            }
             Optional<Contract> optionalContract = contractRepository.findById(contractId);
             if (optionalContract.isPresent()) {
                 Contract contract = optionalContract.get();
