@@ -7,7 +7,7 @@ pipeline {
         REMOTE_HOST = 'production-server'
         REMOTE_PATH = '/home/mohcineboudenjal/smartassurance/prod'
         JENKINS_HOME = '/var/lib/jenkins'
-        JAR_NAME = 'microservice-contact'  // Replace with your actual jar name
+        JAR_NAME = 'microservice-contract'  // Replace with your actual jar name
     }
 
     stages {
